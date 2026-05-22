@@ -1125,21 +1125,21 @@ function MiniPetCanvas({ mood, level, food, pulse }: MiniPetCanvasProps) {
       const reactionProgress = reaction ? 1 - ((reactionUntil - now) / 1250) : 0;
       const bounce = reaction ? -Math.sin(reactionProgress * Math.PI) * 9 : Math.sin(now / 680) * 1.25;
       const catX = 82 + Math.sin(now / 1420) * 1.6;
-      const catY = 133 + bounce;
+      const catY = 126 + bounce;
 
       context.strokeStyle = '#5f57c7';
       context.lineWidth = 15;
       context.lineCap = 'round';
       context.lineJoin = 'round';
       context.beginPath();
-      context.moveTo(catX + 24, catY + 25);
-      context.bezierCurveTo(catX + 72, catY + 35, catX + 75, catY - 45, catX + 34, catY - 23);
+      context.moveTo(catX + 25, catY + 28);
+      context.bezierCurveTo(catX + 70, catY + 33, catX + 78, catY - 37, catX + 37, catY - 24);
       context.stroke();
       context.strokeStyle = 'rgba(179, 173, 255, 0.9)';
       context.lineWidth = 5;
       context.beginPath();
-      context.moveTo(catX + 44, catY + 17);
-      context.bezierCurveTo(catX + 61, catY + 5, catX + 58, catY - 22, catX + 39, catY - 21);
+      context.moveTo(catX + 45, catY + 19);
+      context.bezierCurveTo(catX + 61, catY + 4, catX + 58, catY - 20, catX + 40, catY - 20);
       context.stroke();
       context.strokeStyle = 'rgba(38, 32, 86, 0.26)';
       context.lineWidth = 2.5;
@@ -1170,22 +1170,66 @@ function MiniPetCanvas({ mood, level, food, pulse }: MiniPetCanvasProps) {
       context.strokeStyle = 'rgba(38, 32, 86, 0.28)';
       context.lineWidth = 2.2;
       context.beginPath();
-      context.arc(catX - 18, catY - 3, 10, 0.15, 1.65);
-      context.arc(catX + 18, catY - 3, 10, 1.5, 2.95);
+      context.arc(catX - 19, catY - 2, 12, 0.1, 1.65);
+      context.arc(catX + 19, catY - 2, 12, 1.5, 3);
+      context.stroke();
+
+      const deskY = catY + 39;
+      const deskGradient = context.createLinearGradient(22, deskY - 4, 122, deskY + 24);
+      deskGradient.addColorStop(0, 'rgba(79, 70, 229, 0.92)');
+      deskGradient.addColorStop(1, 'rgba(168, 85, 247, 0.78)');
+      context.fillStyle = deskGradient;
+      drawRoundedRect(20, deskY, 106, 22, 8);
+      context.fill();
+      context.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      context.lineWidth = 1;
+      context.stroke();
+
+      context.fillStyle = 'rgba(219, 234, 254, 0.94)';
+      context.beginPath();
+      context.moveTo(catX - 23, deskY + 6);
+      context.quadraticCurveTo(catX - 7, deskY + 1, catX + 1, deskY + 8);
+      context.quadraticCurveTo(catX - 5, deskY + 17, catX - 25, deskY + 16);
+      context.closePath();
+      context.fill();
+      context.beginPath();
+      context.moveTo(catX + 1, deskY + 8);
+      context.quadraticCurveTo(catX + 15, deskY + 1, catX + 32, deskY + 6);
+      context.quadraticCurveTo(catX + 29, deskY + 17, catX + 3, deskY + 16);
+      context.closePath();
+      context.fill();
+      context.strokeStyle = 'rgba(59, 48, 128, 0.28)';
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(catX + 1, deskY + 8);
+      context.lineTo(catX + 1, deskY + 17);
+      context.stroke();
+
+      context.strokeStyle = '#fbbf24';
+      context.lineWidth = 4;
+      context.beginPath();
+      context.moveTo(catX - 38, deskY - 1);
+      context.lineTo(catX - 16, deskY + 17);
+      context.stroke();
+      context.strokeStyle = '#f472b6';
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(catX - 38, deskY - 1);
+      context.lineTo(catX - 33, deskY + 3);
       context.stroke();
 
       context.fillStyle = '#756ce4';
-      drawRoundedRect(catX - 18, catY + 6, 11, 33, 6);
+      drawRoundedRect(catX - 23, deskY - 17, 12, 25, 6);
       context.fill();
-      drawRoundedRect(catX + 8, catY + 6, 11, 33, 6);
+      drawRoundedRect(catX + 12, deskY - 17, 12, 25, 6);
       context.fill();
-      fillEllipse(catX - 12.5, catY + 39, 11, 7, '#6a60d8');
-      fillEllipse(catX + 13.5, catY + 39, 11, 7, '#6a60d8');
-      context.fillStyle = 'rgba(248, 187, 217, 0.72)';
-      [catX - 16, catX - 12, catX - 8].forEach((padX) => fillEllipse(padX, catY + 38, 1.55, 1.35, context.fillStyle as string));
-      fillEllipse(catX - 12, catY + 41.5, 3.1, 1.9, context.fillStyle as string);
-      [catX + 10, catX + 14, catX + 18].forEach((padX) => fillEllipse(padX, catY + 38, 1.55, 1.35, context.fillStyle as string));
-      fillEllipse(catX + 14, catY + 41.5, 3.1, 1.9, context.fillStyle as string);
+      fillEllipse(catX - 17, deskY + 7, 11, 6.5, '#6a60d8');
+      fillEllipse(catX + 18, deskY + 7, 11, 6.5, '#6a60d8');
+      context.fillStyle = 'rgba(248, 187, 217, 0.76)';
+      [catX - 20.5, catX - 17, catX - 13.5].forEach((padX) => fillEllipse(padX, deskY + 5.7, 1.45, 1.25, context.fillStyle as string));
+      fillEllipse(catX - 17, deskY + 9.5, 3, 1.85, context.fillStyle as string);
+      [catX + 14.5, catX + 18, catX + 21.5].forEach((padX) => fillEllipse(padX, deskY + 5.7, 1.45, 1.25, context.fillStyle as string));
+      fillEllipse(catX + 18, deskY + 9.5, 3, 1.85, context.fillStyle as string);
 
       const headGradient = context.createRadialGradient(catX - 12, catY - 50, 5, catX - 3, catY - 43, 40);
       headGradient.addColorStop(0, '#c7c4ff');
@@ -1235,6 +1279,7 @@ function MiniPetCanvas({ mood, level, food, pulse }: MiniPetCanvasProps) {
       context.fillStyle = 'rgba(236, 72, 153, 0.18)';
       fillEllipse(catX - 18, catY - 37, 7, 4, context.fillStyle as string);
       fillEllipse(catX + 20, catY - 37, 7, 4, context.fillStyle as string);
+      fillEllipse(catX + 1.5, catY - 38.5, 15, 9.5, 'rgba(232, 229, 255, 0.38)');
 
       if (sleepy || blink) {
         context.lineWidth = 2.4;
