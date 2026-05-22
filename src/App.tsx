@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Fit, Layout, useRive, useStateMachineInput } from '@rive-app/react-canvas';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
@@ -38,16 +37,6 @@ type ComfortRating = 'easy' | 'neutral' | 'hard';
 type MethodFinderStep = 'select-type' | 'trial' | 'result';
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 type DifficultySheetMode = 'launch' | 'settings';
-type PetActionType = 'tap' | 'feed' | 'train' | 'levelUp' | 'checkIn' | 'sleepy';
-
-interface PetActionSignal {
-  type: PetActionType;
-  nonce: number;
-}
-
-const RIVE_PET_SRC = `${import.meta.env.BASE_URL}rive/psat-cat.riv`;
-const RIVE_PET_ARTBOARD = 'PsatCat';
-const RIVE_PET_STATE_MACHINE = 'CatState';
 
 interface TableData {
   headers: string[];
@@ -174,9 +163,6 @@ interface BackupData {
   selectedDifficulty?: DifficultyLevel;
   difficultyFixed?: boolean;
   quickTypeIds?: string[];
-  petFood?: number;
-  petBond?: number;
-  petMood?: number;
 }
 
 const STORAGE_KEYS = {
@@ -194,9 +180,6 @@ const STORAGE_KEYS = {
   difficulty: 'psat_training_difficulty',
   difficultyFixed: 'psat_training_difficulty_fixed',
   quickTypes: 'psat_quick_training_types',
-  petFood: 'psat_pet_food',
-  petBond: 'psat_pet_bond',
-  petMood: 'psat_pet_mood',
 };
 
 const difficultyProfiles: Record<DifficultyLevel, {
@@ -918,23 +901,6 @@ function validDifficulty(value: string | null): DifficultyLevel {
   return value === 'beginner' || value === 'advanced' ? value : 'intermediate';
 }
 
-function clampNumber(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function petMoodLabel(mood: number): string {
-  if (mood >= 82) {
-    return '신남';
-  }
-  if (mood >= 58) {
-    return '좋음';
-  }
-  if (mood >= 34) {
-    return '졸림';
-  }
-  return '배고픔';
-}
-
 function withGenerationDifficulty<T>(difficulty: DifficultyLevel, action: () => T): T {
   const previous = activeGenerationDifficulty;
   activeGenerationDifficulty = difficulty;
@@ -943,570 +909,6 @@ function withGenerationDifficulty<T>(difficulty: DifficultyLevel, action: () => 
   } finally {
     activeGenerationDifficulty = previous;
   }
-}
-
-interface MiniPetCanvasProps {
-  mood: number;
-  level: number;
-  food: number;
-  pulse: number;
-}
-
-function MiniPetCanvas({ mood, level, food, pulse }: MiniPetCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      return undefined;
-    }
-
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return undefined;
-    }
-
-    const dpr = window.devicePixelRatio || 1;
-    let width = 0;
-    let height = 0;
-    let frame = 0;
-    let animationId = 0;
-    const startedAt = performance.now();
-    const reactionUntil = pulse > 0 ? startedAt + 1250 : 0;
-
-    const resizeCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      width = Math.max(1, rect.width);
-      height = Math.max(1, rect.height);
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      context.imageSmoothingEnabled = true;
-    };
-
-    const drawHeart = (x: number, y: number, size: number) => {
-      context.beginPath();
-      context.moveTo(x, y + size * 0.3);
-      context.bezierCurveTo(x - size, y - size * 0.35, x - size * 0.45, y - size, x, y - size * 0.35);
-      context.bezierCurveTo(x + size * 0.45, y - size, x + size, y - size * 0.35, x, y + size * 0.3);
-      context.fill();
-    };
-
-    const drawRoundedRect = (x: number, y: number, rectWidth: number, rectHeight: number, radius: number) => {
-      context.beginPath();
-      context.moveTo(x + radius, y);
-      context.lineTo(x + rectWidth - radius, y);
-      context.quadraticCurveTo(x + rectWidth, y, x + rectWidth, y + radius);
-      context.lineTo(x + rectWidth, y + rectHeight - radius);
-      context.quadraticCurveTo(x + rectWidth, y + rectHeight, x + rectWidth - radius, y + rectHeight);
-      context.lineTo(x + radius, y + rectHeight);
-      context.quadraticCurveTo(x, y + rectHeight, x, y + rectHeight - radius);
-      context.lineTo(x, y + radius);
-      context.quadraticCurveTo(x, y, x + radius, y);
-      context.closePath();
-    };
-
-    const drawStar = (x: number, y: number, size: number, alpha: number) => {
-      context.save();
-      context.globalAlpha = alpha;
-      context.strokeStyle = '#e0f7ff';
-      context.lineWidth = 1.4;
-      context.lineCap = 'round';
-      context.beginPath();
-      context.moveTo(x - size, y);
-      context.lineTo(x + size, y);
-      context.moveTo(x, y - size);
-      context.lineTo(x, y + size);
-      context.stroke();
-      context.restore();
-    };
-
-    const fillEllipse = (x: number, y: number, radiusX: number, radiusY: number, fillStyle: string | CanvasGradient, rotation = 0) => {
-      context.fillStyle = fillStyle;
-      context.beginPath();
-      context.ellipse(x, y, radiusX, radiusY, rotation, 0, Math.PI * 2);
-      context.fill();
-    };
-
-    const draw = (now: number) => {
-      frame += 1;
-      if (frame % 30 === 0) {
-        const rect = canvas.getBoundingClientRect();
-        if (Math.abs(rect.width - width) > 1 || Math.abs(rect.height - height) > 1) {
-          resizeCanvas();
-        }
-      }
-
-      context.clearRect(0, 0, width, height);
-
-      const background = context.createLinearGradient(0, 0, width, height);
-      background.addColorStop(0, 'rgba(8, 13, 32, 0.98)');
-      background.addColorStop(0.48, 'rgba(31, 25, 72, 0.98)');
-      background.addColorStop(1, 'rgba(8, 19, 42, 0.99)');
-      context.fillStyle = background;
-      drawRoundedRect(0, 0, width, height, 18);
-      context.fill();
-
-      const glow = context.createRadialGradient(width * 0.74, height * 0.22, 0, width * 0.74, height * 0.22, width * 0.68);
-      glow.addColorStop(0, 'rgba(6, 182, 212, 0.17)');
-      glow.addColorStop(0.5, 'rgba(168, 85, 247, 0.08)');
-      glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      context.fillStyle = glow;
-      context.fillRect(0, 0, width, height);
-
-      for (let index = 0; index < 26; index += 1) {
-        const x = (index * 29 + 17) % Math.max(1, width);
-        const y = (index * 23 + 9) % Math.max(1, height * 0.56);
-        const twinkle = 0.22 + Math.sin(now / 420 + index) * 0.18;
-        context.fillStyle = `rgba(255, 255, 255, ${twinkle})`;
-        context.beginPath();
-        context.arc(x, y, index % 5 === 0 ? 1.35 : 0.75, 0, Math.PI * 2);
-        context.fill();
-      }
-
-      drawStar(width * 0.75, height * 0.17, 4, 0.55 + Math.sin(now / 500) * 0.18);
-      drawStar(width * 0.42, height * 0.25, 3, 0.45);
-
-      const reaction = now < reactionUntil;
-      const moodValue = clampNumber(mood, 0, 100);
-      const sleepy = moodValue < 42;
-      const happy = moodValue >= 70;
-      const lowMood = moodValue < 30;
-      const blink = !sleepy && Math.floor(now / 2600) % 2 === 1 && now % 2600 > 2460;
-      const sceneWidth = 148;
-      const sceneHeight = 184;
-      const scale = Math.min(width / sceneWidth, height / sceneHeight);
-
-      context.save();
-      context.translate((width - sceneWidth * scale) / 2, (height - sceneHeight * scale) / 2);
-      context.scale(scale, scale);
-
-      context.fillStyle = 'rgba(8, 14, 30, 0.38)';
-      drawRoundedRect(14, 18, 48, 42, 10);
-      context.fill();
-      context.strokeStyle = 'rgba(6, 182, 212, 0.18)';
-      context.lineWidth = 1;
-      context.stroke();
-
-      context.fillStyle = 'rgba(6, 182, 212, 0.13)';
-      context.beginPath();
-      context.ellipse(96, 154, 52, 12, 0, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = 'rgba(255, 255, 255, 0.08)';
-      drawRoundedRect(20, 151, 38, 8, 4);
-      context.fill();
-      context.fillStyle = '#4f46e5';
-      drawRoundedRect(21, 144, 30, 11, 2.5);
-      context.fill();
-      context.fillStyle = '#dbeafe';
-      drawRoundedRect(24, 141, 30, 10, 2.5);
-      context.fill();
-      context.fillStyle = 'rgba(15, 23, 42, 0.55)';
-      drawRoundedRect(29, 143, 18, 2, 1);
-      context.fill();
-
-      context.fillStyle = '#f59e0b';
-      context.beginPath();
-      context.ellipse(36, 170, 23, 8, 0, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = 'rgba(251, 191, 36, 0.98)';
-      for (let index = 0; index < Math.min(food, 7); index += 1) {
-        context.beginPath();
-        context.arc(26 + index * 4.4, 163 - (index % 3) * 1.9, 2.15, 0, Math.PI * 2);
-        context.fill();
-      }
-      context.strokeStyle = 'rgba(124, 45, 18, 0.36)';
-      context.lineWidth = 1.4;
-      context.beginPath();
-      context.ellipse(36, 170, 23, 8, 0, 0, Math.PI * 2);
-      context.stroke();
-
-      const reactionProgress = reaction ? 1 - ((reactionUntil - now) / 1250) : 0;
-      const bounce = reaction ? -Math.sin(reactionProgress * Math.PI) * 9 : Math.sin(now / 680) * 1.25;
-      const catX = 82 + Math.sin(now / 1420) * 1.6;
-      const catY = 126 + bounce;
-
-      context.strokeStyle = '#5f57c7';
-      context.lineWidth = 15;
-      context.lineCap = 'round';
-      context.lineJoin = 'round';
-      context.beginPath();
-      context.moveTo(catX + 25, catY + 28);
-      context.bezierCurveTo(catX + 70, catY + 33, catX + 78, catY - 37, catX + 37, catY - 24);
-      context.stroke();
-      context.strokeStyle = 'rgba(179, 173, 255, 0.9)';
-      context.lineWidth = 5;
-      context.beginPath();
-      context.moveTo(catX + 45, catY + 19);
-      context.bezierCurveTo(catX + 61, catY + 4, catX + 58, catY - 20, catX + 40, catY - 20);
-      context.stroke();
-      context.strokeStyle = 'rgba(38, 32, 86, 0.26)';
-      context.lineWidth = 2.5;
-      [0, 1, 2].forEach((stripe) => {
-        context.beginPath();
-        context.moveTo(catX + 55 + stripe * 2, catY - 23 + stripe * 12);
-        context.lineTo(catX + 45 + stripe * 2, catY - 17 + stripe * 11);
-        context.stroke();
-      });
-
-      const bodyGradient = context.createRadialGradient(catX - 13, catY - 26, 8, catX, catY, 58);
-      bodyGradient.addColorStop(0, '#a8a2ff');
-      bodyGradient.addColorStop(0.58, '#8178f2');
-      bodyGradient.addColorStop(1, '#665bd6');
-      context.fillStyle = bodyGradient;
-      context.beginPath();
-      context.moveTo(catX - 25, catY - 18);
-      context.bezierCurveTo(catX - 42, catY + 0, catX - 38, catY + 43, catX - 4, catY + 46);
-      context.bezierCurveTo(catX + 33, catY + 45, catX + 43, catY + 3, catX + 24, catY - 18);
-      context.bezierCurveTo(catX + 13, catY - 29, catX - 11, catY - 29, catX - 25, catY - 18);
-      context.closePath();
-      context.fill();
-      context.strokeStyle = 'rgba(35, 29, 88, 0.46)';
-      context.lineWidth = 2.4;
-      context.stroke();
-      fillEllipse(catX - 1, catY + 10, 19, 23, 'rgba(201, 197, 255, 0.56)');
-
-      context.strokeStyle = 'rgba(38, 32, 86, 0.28)';
-      context.lineWidth = 2.2;
-      context.beginPath();
-      context.arc(catX - 19, catY - 2, 12, 0.1, 1.65);
-      context.arc(catX + 19, catY - 2, 12, 1.5, 3);
-      context.stroke();
-
-      const deskY = catY + 39;
-      const deskGradient = context.createLinearGradient(22, deskY - 4, 122, deskY + 24);
-      deskGradient.addColorStop(0, 'rgba(79, 70, 229, 0.92)');
-      deskGradient.addColorStop(1, 'rgba(168, 85, 247, 0.78)');
-      context.fillStyle = deskGradient;
-      drawRoundedRect(20, deskY, 106, 22, 8);
-      context.fill();
-      context.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      context.lineWidth = 1;
-      context.stroke();
-
-      context.fillStyle = 'rgba(219, 234, 254, 0.94)';
-      context.beginPath();
-      context.moveTo(catX - 23, deskY + 6);
-      context.quadraticCurveTo(catX - 7, deskY + 1, catX + 1, deskY + 8);
-      context.quadraticCurveTo(catX - 5, deskY + 17, catX - 25, deskY + 16);
-      context.closePath();
-      context.fill();
-      context.beginPath();
-      context.moveTo(catX + 1, deskY + 8);
-      context.quadraticCurveTo(catX + 15, deskY + 1, catX + 32, deskY + 6);
-      context.quadraticCurveTo(catX + 29, deskY + 17, catX + 3, deskY + 16);
-      context.closePath();
-      context.fill();
-      context.strokeStyle = 'rgba(59, 48, 128, 0.28)';
-      context.lineWidth = 1;
-      context.beginPath();
-      context.moveTo(catX + 1, deskY + 8);
-      context.lineTo(catX + 1, deskY + 17);
-      context.stroke();
-
-      context.strokeStyle = '#fbbf24';
-      context.lineWidth = 4;
-      context.beginPath();
-      context.moveTo(catX - 38, deskY - 1);
-      context.lineTo(catX - 16, deskY + 17);
-      context.stroke();
-      context.strokeStyle = '#f472b6';
-      context.lineWidth = 2;
-      context.beginPath();
-      context.moveTo(catX - 38, deskY - 1);
-      context.lineTo(catX - 33, deskY + 3);
-      context.stroke();
-
-      context.fillStyle = '#756ce4';
-      drawRoundedRect(catX - 23, deskY - 17, 12, 25, 6);
-      context.fill();
-      drawRoundedRect(catX + 12, deskY - 17, 12, 25, 6);
-      context.fill();
-      fillEllipse(catX - 17, deskY + 7, 11, 6.5, '#6a60d8');
-      fillEllipse(catX + 18, deskY + 7, 11, 6.5, '#6a60d8');
-      context.fillStyle = 'rgba(248, 187, 217, 0.76)';
-      [catX - 20.5, catX - 17, catX - 13.5].forEach((padX) => fillEllipse(padX, deskY + 5.7, 1.45, 1.25, context.fillStyle as string));
-      fillEllipse(catX - 17, deskY + 9.5, 3, 1.85, context.fillStyle as string);
-      [catX + 14.5, catX + 18, catX + 21.5].forEach((padX) => fillEllipse(padX, deskY + 5.7, 1.45, 1.25, context.fillStyle as string));
-      fillEllipse(catX + 18, deskY + 9.5, 3, 1.85, context.fillStyle as string);
-
-      const headGradient = context.createRadialGradient(catX - 12, catY - 50, 5, catX - 3, catY - 43, 40);
-      headGradient.addColorStop(0, '#c7c4ff');
-      headGradient.addColorStop(0.64, '#a9a2ff');
-      headGradient.addColorStop(1, '#8278ed');
-
-      context.fillStyle = headGradient;
-      context.beginPath();
-      context.moveTo(catX - 29, catY - 55);
-      context.lineTo(catX - 28, catY - 90);
-      context.lineTo(catX - 7, catY - 64);
-      context.quadraticCurveTo(catX + 4, catY - 68, catX + 17, catY - 63);
-      context.lineTo(catX + 38, catY - 90);
-      context.lineTo(catX + 35, catY - 54);
-      context.quadraticCurveTo(catX + 31, catY - 19, catX - 1, catY - 17);
-      context.quadraticCurveTo(catX - 31, catY - 20, catX - 29, catY - 55);
-      context.closePath();
-      context.fill();
-      context.strokeStyle = 'rgba(35, 29, 88, 0.48)';
-      context.lineWidth = 2.2;
-      context.stroke();
-
-      context.fillStyle = 'rgba(247, 141, 196, 0.62)';
-      context.beginPath();
-      context.moveTo(catX - 22, catY - 59);
-      context.lineTo(catX - 25, catY - 78);
-      context.lineTo(catX - 12, catY - 61);
-      context.closePath();
-      context.fill();
-      context.beginPath();
-      context.moveTo(catX + 23, catY - 60);
-      context.lineTo(catX + 34, catY - 79);
-      context.lineTo(catX + 31, catY - 56);
-      context.closePath();
-      context.fill();
-
-      context.strokeStyle = 'rgba(59, 48, 128, 0.32)';
-      context.lineWidth = 3;
-      context.lineCap = 'round';
-      [-1, 0, 1].forEach((stripe) => {
-        context.beginPath();
-        context.moveTo(catX - 2 + stripe * 7, catY - 65);
-        context.quadraticCurveTo(catX + stripe * 4, catY - 58, catX - 1 + stripe * 4, catY - 52);
-        context.stroke();
-      });
-
-      context.fillStyle = 'rgba(236, 72, 153, 0.18)';
-      fillEllipse(catX - 18, catY - 37, 7, 4, context.fillStyle as string);
-      fillEllipse(catX + 20, catY - 37, 7, 4, context.fillStyle as string);
-      fillEllipse(catX + 1.5, catY - 38.5, 15, 9.5, 'rgba(232, 229, 255, 0.38)');
-
-      if (sleepy || blink) {
-        context.lineWidth = 2.4;
-        context.strokeStyle = '#262044';
-        context.beginPath();
-        context.moveTo(catX - 15, catY - 48);
-        context.quadraticCurveTo(catX - 10, catY - 43, catX - 4, catY - 48);
-        context.moveTo(catX + 8, catY - 48);
-        context.quadraticCurveTo(catX + 14, catY - 43, catX + 20, catY - 48);
-        context.stroke();
-      } else {
-        const eyeColor = happy ? '#1f244b' : '#27224a';
-        fillEllipse(catX - 10, catY - 48, 4.1, happy ? 5.2 : 4.45, eyeColor);
-        fillEllipse(catX + 14, catY - 48, 4.1, happy ? 5.2 : 4.45, eyeColor);
-        fillEllipse(catX - 11.35, catY - 50.05, 1.12, 1.32, '#ffffff');
-        fillEllipse(catX + 12.65, catY - 50.05, 1.12, 1.32, '#ffffff');
-        fillEllipse(catX - 8.6, catY - 45.7, 0.72, 0.65, 'rgba(125, 211, 252, 0.78)');
-        fillEllipse(catX + 15.4, catY - 45.7, 0.72, 0.65, 'rgba(125, 211, 252, 0.78)');
-      }
-
-      context.fillStyle = '#ef6f9b';
-      context.beginPath();
-      context.moveTo(catX + 1.5, catY - 41.5);
-      context.lineTo(catX - 2.4, catY - 36.8);
-      context.lineTo(catX + 5.4, catY - 36.8);
-      context.closePath();
-      context.fill();
-
-      context.lineWidth = 1.7;
-      context.strokeStyle = '#30264d';
-      context.beginPath();
-      context.moveTo(catX + 1.5, catY - 36.6);
-      context.lineTo(catX + 1.5, catY - 34.5);
-      context.moveTo(catX + 1.5, catY - 34.5);
-      context.quadraticCurveTo(catX - 5.5, catY - 29.4, catX - 12, catY - 34.1);
-      context.moveTo(catX + 1.5, catY - 34.5);
-      context.quadraticCurveTo(catX + 8.5, catY - 29.4, catX + 15.5, catY - 34.1);
-      context.stroke();
-
-      context.lineWidth = 1.35;
-      context.strokeStyle = 'rgba(245, 243, 255, 0.86)';
-      [-1, 0, 1].forEach((offset) => {
-        const y = catY - 39 + offset * 4.4;
-        context.beginPath();
-        context.moveTo(catX - 18, y);
-        context.lineTo(catX - 45, y - 4 + offset * 1.3);
-        context.moveTo(catX + 21, y);
-        context.lineTo(catX + 48, y - 4 + offset * 1.3);
-        context.stroke();
-      });
-
-      context.strokeStyle = '#38bdf8';
-      context.lineWidth = 3.2;
-      context.beginPath();
-      context.moveTo(catX - 18, catY - 20);
-      context.quadraticCurveTo(catX + 1, catY - 14, catX + 22, catY - 20);
-      context.stroke();
-      fillEllipse(catX + 1, catY - 15, 4.5, 4.5, '#fbbf24');
-      context.fillStyle = 'rgba(120, 53, 15, 0.58)';
-      context.beginPath();
-      context.arc(catX + 1, catY - 14, 1.3, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = 'rgba(255, 255, 255, 0.78)';
-      context.font = '800 10px Inter, sans-serif';
-      context.fillText(`LV ${level}`, 11, 17);
-
-      if (happy) {
-        drawStar(catX + 43, catY - 76, 4.5, 0.72 + Math.sin(now / 350) * 0.16);
-      }
-
-      if (lowMood) {
-        context.fillStyle = 'rgba(203, 213, 225, 0.78)';
-        context.font = '800 9px Inter, sans-serif';
-        context.fillText('Z', catX + 37, catY - 72 + Math.sin(now / 480) * 2);
-        context.fillText('z', catX + 45, catY - 82 + Math.cos(now / 520) * 2);
-      }
-
-      if (reaction) {
-        const progress = reactionProgress;
-        context.fillStyle = `rgba(236, 72, 153, ${1 - progress})`;
-        drawHeart(catX + 36, catY - 84 - progress * 18, 8);
-        context.fillStyle = `rgba(6, 182, 212, ${1 - progress})`;
-        drawStar(catX - 42, catY - 71 - progress * 14, 5, 1 - progress);
-        context.fillStyle = `rgba(250, 204, 21, ${1 - progress})`;
-        fillEllipse(catX + 4, catY - 96 - progress * 10, 3.2, 3.2, context.fillStyle as string);
-      }
-
-      context.restore();
-
-      animationId = window.requestAnimationFrame(draw);
-    };
-
-    resizeCanvas();
-    animationId = window.requestAnimationFrame(draw);
-    const resizeObserver = new ResizeObserver(resizeCanvas);
-    resizeObserver.observe(canvas);
-    window.addEventListener('resize', resizeCanvas);
-
-    return () => {
-      window.cancelAnimationFrame(animationId);
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', resizeCanvas);
-    };
-  }, [food, level, mood, pulse]);
-
-  return <canvas ref={canvasRef} className="pet-canvas" aria-hidden="true" />;
-}
-
-interface PetRendererProps {
-  mood: number;
-  level: number;
-  food: number;
-  signal: PetActionSignal;
-}
-
-interface RivePetPlayerProps extends PetRendererProps {
-  onLoadError: () => void;
-}
-
-function RivePetPlayer({ mood, level, food, signal, onLoadError }: RivePetPlayerProps) {
-  const layout = useMemo(() => new Layout({ fit: Fit.Contain }), []);
-  const { rive, RiveComponent } = useRive({
-    src: RIVE_PET_SRC,
-    artboard: RIVE_PET_ARTBOARD,
-    stateMachines: RIVE_PET_STATE_MACHINE,
-    layout,
-    autoplay: true,
-    onLoadError,
-  }, {
-    useDevicePixelRatio: true,
-    shouldResizeCanvasToContainer: true,
-  });
-
-  const moodInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'mood', mood);
-  const levelInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'level', level);
-  const hasFoodInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'hasFood', food > 0);
-  const feedInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'feed');
-  const trainInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'train');
-  const levelUpInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'levelUp');
-  const checkInInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'checkIn');
-  const sleepyInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'sleepy');
-  const tapInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'tap');
-
-  useEffect(() => {
-    if (moodInput) {
-      moodInput.value = mood;
-    }
-  }, [mood, moodInput]);
-
-  useEffect(() => {
-    if (levelInput) {
-      levelInput.value = level;
-    }
-  }, [level, levelInput]);
-
-  useEffect(() => {
-    if (hasFoodInput) {
-      hasFoodInput.value = food > 0;
-    }
-  }, [food, hasFoodInput]);
-
-  useEffect(() => {
-    if (signal.nonce === 0) {
-      return;
-    }
-
-    const triggerMap: Record<PetActionType, { fire?: () => void } | null> = {
-      tap: tapInput,
-      feed: feedInput,
-      train: trainInput,
-      levelUp: levelUpInput,
-      checkIn: checkInInput,
-      sleepy: sleepyInput,
-    };
-
-    triggerMap[signal.type]?.fire?.();
-  }, [checkInInput, feedInput, levelUpInput, signal, sleepyInput, tapInput, trainInput]);
-
-  return (
-    <RiveComponent className="pet-canvas rive-pet-canvas" aria-label="Rive 틈새냥" />
-  );
-}
-
-function PetRenderer({ mood, level, food, signal }: PetRendererProps) {
-  const [riveAssetStatus, setRiveAssetStatus] = useState<'checking' | 'available' | 'missing'>('checking');
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let isMounted = true;
-
-    fetch(RIVE_PET_SRC, {
-      cache: 'no-store',
-      headers: { Range: 'bytes=0-3' },
-      signal: controller.signal,
-    })
-      .then((response) => {
-        const contentType = response.headers.get('content-type') ?? '';
-        if (isMounted) {
-          setRiveAssetStatus(response.ok && !contentType.includes('text/html') ? 'available' : 'missing');
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setRiveAssetStatus('missing');
-        }
-      });
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
-  }, []);
-
-  if (riveAssetStatus === 'available') {
-    return (
-      <RivePetPlayer
-        mood={mood}
-        level={level}
-        food={food}
-        signal={signal}
-        onLoadError={() => setRiveAssetStatus('missing')}
-      />
-    );
-  }
-
-  return <MiniPetCanvas mood={mood} level={level} food={food} pulse={signal.nonce} />;
 }
 
 function buildMethodFitResults(
@@ -1613,10 +1015,6 @@ export default function App() {
   const [accuracy, setAccuracy] = useState(() => readNumber(STORAGE_KEYS.accuracy, 0));
   const [todaySolvedCount, setTodaySolvedCount] = useState(() => readNumber(STORAGE_KEYS.todaySolved, 0));
   const [todayTime, setTodayTime] = useState(() => readNumber(STORAGE_KEYS.todayTime, 0));
-  const [petFood, setPetFood] = useState(() => clampNumber(readNumber(STORAGE_KEYS.petFood, 2), 0, 99));
-  const [petBond, setPetBond] = useState(() => clampNumber(readNumber(STORAGE_KEYS.petBond, 0), 0, 999));
-  const [petMood, setPetMood] = useState(() => clampNumber(readNumber(STORAGE_KEYS.petMood, 62), 0, 100));
-  const [petSignal, setPetSignal] = useState<PetActionSignal>({ type: 'tap', nonce: 0 });
   const [isAmoled, setIsAmoled] = useState(() => localStorage.getItem(STORAGE_KEYS.amoled) === 'true');
   const [isHapticEnabled, setIsHapticEnabled] = useState(() => localStorage.getItem(STORAGE_KEYS.haptic) !== 'false');
   const [incorrectNotes, setIncorrectNotes] = useState<IncorrectNote[]>(() => readJson(STORAGE_KEYS.incorrect, []));
@@ -1723,8 +1121,7 @@ export default function App() {
     return Array.from(groups.values()).sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, 'ko-KR'));
   }, [incorrectNotes]);
 
-  const petLevel = Math.min(99, Math.floor(petBond / 12) + 1);
-  const petNextLevelProgress = petBond % 12;
+  const routineProgressPercent = Math.min(100, Math.round((todaySolvedCount / 12) * 100));
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.streak, streakCount.toString());
@@ -1755,12 +1152,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.quickTypes, JSON.stringify(quickTypeIds));
   }, [quickTypeIds]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.petFood, petFood.toString());
-    localStorage.setItem(STORAGE_KEYS.petBond, petBond.toString());
-    localStorage.setItem(STORAGE_KEYS.petMood, petMood.toString());
-  }, [petFood, petBond, petMood]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -1998,36 +1389,6 @@ export default function App() {
     setIsQuickTypeSettingsOpen(false);
   };
 
-  const emitPetAction = (type: PetActionType) => {
-    setPetSignal((prev) => ({ type, nonce: prev.nonce + 1 }));
-  };
-
-  const rewardPetForQuestion = (isCorrect: boolean) => {
-    setPetFood((prev) => clampNumber(prev + (isCorrect ? 2 : 1), 0, 99));
-    setPetMood((prev) => clampNumber(prev + (isCorrect ? 2 : 1), 0, 100));
-  };
-
-  const handleFeedPet = () => {
-    triggerHaptic();
-    if (petFood <= 0) {
-      openCourseBuilder();
-      return;
-    }
-
-    const nextBond = clampNumber(petBond + 4, 0, 999);
-    const nextLevel = Math.min(99, Math.floor(nextBond / 12) + 1);
-    setPetFood((prev) => clampNumber(prev - 1, 0, 99));
-    setPetBond(nextBond);
-    setPetMood((prev) => clampNumber(prev + 14, 0, 100));
-    emitPetAction(nextLevel > petLevel ? 'levelUp' : 'feed');
-  };
-
-  const handlePetTap = () => {
-    triggerHaptic();
-    setPetMood((prev) => clampNumber(prev + 2, 0, 100));
-    emitPetAction(petMood < 34 ? 'sleepy' : 'tap');
-  };
-
   const getPerTypeCount = (types: TrainingType[], difficulty: DifficultyLevel): number => {
     const base = types.length <= 2 ? 3 : types.length <= 4 ? 2 : 1;
     return Math.max(1, Math.min(5, base + difficultyProfiles[difficulty].perTypeOffset));
@@ -2070,7 +1431,6 @@ export default function App() {
     setSecondsLeft(getTrainingSeconds(questions.length, difficulty));
     setQuestionStartedAt(Date.now());
     setIsExamActive(true);
-    emitPetAction('train');
     setIsCourseBuilderOpen(false);
     setIsDifficultySheetOpen(false);
     setPendingTrainingLaunch(null);
@@ -2118,7 +1478,6 @@ export default function App() {
     setSecondsLeft(seconds);
     setQuestionStartedAt(Date.now());
     setIsExamActive(true);
-    emitPetAction('train');
   };
 
   const startMistakeCourse = () => {
@@ -2292,7 +1651,6 @@ export default function App() {
     triggerHaptic();
     const spentSeconds = Math.max(1, Math.round((Date.now() - questionStartedAt) / 1000));
     const isCorrect = oIdx === question.correctIndex;
-    rewardPetForQuestion(isCorrect);
 
     setTypeStats((prev) => {
       const previous = prev[question.typeId] ?? {
@@ -2394,9 +1752,6 @@ export default function App() {
     setIncorrectNotes(nextIncorrect.slice(0, 80));
     setDailyResult(result);
     setLastExamResult(result);
-    setPetFood((prev) => clampNumber(prev + 2, 0, 99));
-    setPetMood((prev) => clampNumber(prev + 6, 0, 100));
-    emitPetAction(result.accuracy >= 70 ? 'checkIn' : 'tap');
     setIsExamActive(false);
     setShowResultsOverlay(true);
   }
@@ -2415,9 +1770,6 @@ export default function App() {
       selectedDifficulty,
       difficultyFixed: isDifficultyFixed,
       quickTypeIds,
-      petFood,
-      petBond,
-      petMood,
     };
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
     const anchor = document.createElement('a');
@@ -2449,9 +1801,6 @@ export default function App() {
         setSelectedDifficulty(validDifficulty(parsed.selectedDifficulty ?? 'intermediate'));
         setIsDifficultyFixed(Boolean(parsed.difficultyFixed));
         setQuickTypeIds(normalizeTrainingTypeIds(parsed.quickTypeIds, defaultQuickTypeIds));
-        setPetFood(clampNumber(Number(parsed.petFood ?? 2), 0, 99));
-        setPetBond(clampNumber(Number(parsed.petBond ?? 0), 0, 999));
-        setPetMood(clampNumber(Number(parsed.petMood ?? 62), 0, 100));
       } catch {
         window.alert('백업 파일을 읽지 못했습니다.');
       }
@@ -2476,10 +1825,6 @@ export default function App() {
     setSelectedDifficulty('intermediate');
     setIsDifficultyFixed(false);
     setQuickTypeIds(defaultQuickTypeIds);
-    setPetFood(2);
-    setPetBond(0);
-    setPetMood(62);
-    emitPetAction('tap');
   };
 
   const currentQuestion = activeExamQuestions[currentQIndex];
@@ -2533,39 +1878,42 @@ export default function App() {
           <div className="app-scrollable-body">
             {activeTab === 'home' && (
               <div className="subpage-container animate-fade">
-                <div className="dashboard-overview-card pet-dashboard-card">
-                  <div className="pet-info-panel">
-                    <span className="pet-kicker">틈새냥 루틴</span>
-                    <h4>틈새냥 대기 중</h4>
-                    <p>문제를 풀면 사료가 쌓이고, 먹이면 레벨과 기분이 오릅니다.</p>
-                    <div className="pet-stats-strip">
-                      <div className="pet-mini-stat">
-                        <span>{petFood}개</span>
-                        <small>사료</small>
+                <div className="dashboard-overview-card routine-dashboard-card">
+                  <div className="routine-info-panel">
+                    <span className="routine-kicker">틈새 루틴</span>
+                    <h4>오늘 훈련 대기 중</h4>
+                    <p>자동채점 유형만 빠르게 돌리고, 기록은 유형별 속도로 남깁니다.</p>
+                    <div className="routine-stats-strip">
+                      <div className="routine-mini-stat">
+                        <span>{todaySolvedCount}/12</span>
+                        <small>오늘 문제</small>
                       </div>
-                      <div className="pet-mini-stat">
-                        <span>Lv.{petLevel}</span>
-                        <small>{petNextLevelProgress}/12</small>
+                      <div className="routine-mini-stat">
+                        <span>{totalSolved}제</span>
+                        <small>누적</small>
                       </div>
-                      <div className="pet-mini-stat">
-                        <span>{petMoodLabel(petMood)}</span>
-                        <small>{todaySolvedCount}/12제</small>
+                      <div className="routine-mini-stat">
+                        <span>{accuracy}%</span>
+                        <small>정답률</small>
                       </div>
                     </div>
-                    <div className="pet-action-row">
-                      <button className="pet-feed-btn" type="button" onClick={handleFeedPet}>
+                    <div className="routine-action-row">
+                      <button className="routine-primary-btn" type="button" onClick={openCourseBuilder}>
                         <Zap size={13} />
-                        {petFood > 0 ? '먹이 주기' : '훈련해서 얻기'}
+                        오늘 훈련 시작
                       </button>
-                      <button className="pet-mini-link-btn" type="button" onClick={openCourseBuilder}>
-                        훈련 시작
+                      <button className="routine-secondary-btn" type="button" onClick={() => setActiveTab('training')}>
+                        유형 보기
                       </button>
                     </div>
                   </div>
 
-                  <button className="pet-canvas-wrap" type="button" onClick={handlePetTap} aria-label="틈새냥 쓰다듬기">
-                    <PetRenderer mood={petMood} level={petLevel} food={petFood} signal={petSignal} />
-                  </button>
+                  <div className="routine-orbit-panel" aria-hidden="true">
+                    <div className="routine-orbit-ring">
+                      <span className="routine-orbit-core">{routineProgressPercent}%</span>
+                    </div>
+                    <span className="routine-orbit-caption">AUTO DRILL</span>
+                  </div>
                 </div>
 
                 <button className="advisor-banner daily-training-launch" type="button" onClick={openCourseBuilder}>
