@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { Fit, Layout, useRive, useStateMachineInput } from '@rive-app/react-canvas';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
@@ -37,6 +38,16 @@ type ComfortRating = 'easy' | 'neutral' | 'hard';
 type MethodFinderStep = 'select-type' | 'trial' | 'result';
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 type DifficultySheetMode = 'launch' | 'settings';
+type PetActionType = 'tap' | 'feed' | 'train' | 'levelUp' | 'checkIn' | 'sleepy';
+
+interface PetActionSignal {
+  type: PetActionType;
+  nonce: number;
+}
+
+const RIVE_PET_SRC = `${import.meta.env.BASE_URL}rive/psat-cat.riv`;
+const RIVE_PET_ARTBOARD = 'PsatCat';
+const RIVE_PET_STATE_MACHINE = 'CatState';
 
 interface TableData {
   headers: string[];
@@ -1333,6 +1344,126 @@ function MiniPetCanvas({ mood, level, food, pulse }: MiniPetCanvasProps) {
   return <canvas ref={canvasRef} className="pet-canvas" aria-hidden="true" />;
 }
 
+interface PetRendererProps {
+  mood: number;
+  level: number;
+  food: number;
+  signal: PetActionSignal;
+}
+
+interface RivePetPlayerProps extends PetRendererProps {
+  onLoadError: () => void;
+}
+
+function RivePetPlayer({ mood, level, food, signal, onLoadError }: RivePetPlayerProps) {
+  const layout = useMemo(() => new Layout({ fit: Fit.Contain }), []);
+  const { rive, RiveComponent } = useRive({
+    src: RIVE_PET_SRC,
+    artboard: RIVE_PET_ARTBOARD,
+    stateMachines: RIVE_PET_STATE_MACHINE,
+    layout,
+    autoplay: true,
+    onLoadError,
+  }, {
+    useDevicePixelRatio: true,
+    shouldResizeCanvasToContainer: true,
+  });
+
+  const moodInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'mood', mood);
+  const levelInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'level', level);
+  const hasFoodInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'hasFood', food > 0);
+  const feedInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'feed');
+  const trainInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'train');
+  const levelUpInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'levelUp');
+  const checkInInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'checkIn');
+  const sleepyInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'sleepy');
+  const tapInput = useStateMachineInput(rive, RIVE_PET_STATE_MACHINE, 'tap');
+
+  useEffect(() => {
+    if (moodInput) {
+      moodInput.value = mood;
+    }
+  }, [mood, moodInput]);
+
+  useEffect(() => {
+    if (levelInput) {
+      levelInput.value = level;
+    }
+  }, [level, levelInput]);
+
+  useEffect(() => {
+    if (hasFoodInput) {
+      hasFoodInput.value = food > 0;
+    }
+  }, [food, hasFoodInput]);
+
+  useEffect(() => {
+    if (signal.nonce === 0) {
+      return;
+    }
+
+    const triggerMap: Record<PetActionType, { fire?: () => void } | null> = {
+      tap: tapInput,
+      feed: feedInput,
+      train: trainInput,
+      levelUp: levelUpInput,
+      checkIn: checkInInput,
+      sleepy: sleepyInput,
+    };
+
+    triggerMap[signal.type]?.fire?.();
+  }, [checkInInput, feedInput, levelUpInput, signal, sleepyInput, tapInput, trainInput]);
+
+  return (
+    <RiveComponent className="pet-canvas rive-pet-canvas" aria-label="Rive 틈새냥" />
+  );
+}
+
+function PetRenderer({ mood, level, food, signal }: PetRendererProps) {
+  const [riveAssetStatus, setRiveAssetStatus] = useState<'checking' | 'available' | 'missing'>('checking');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
+
+    fetch(RIVE_PET_SRC, {
+      cache: 'no-store',
+      headers: { Range: 'bytes=0-3' },
+      signal: controller.signal,
+    })
+      .then((response) => {
+        const contentType = response.headers.get('content-type') ?? '';
+        if (isMounted) {
+          setRiveAssetStatus(response.ok && !contentType.includes('text/html') ? 'available' : 'missing');
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setRiveAssetStatus('missing');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
+
+  if (riveAssetStatus === 'available') {
+    return (
+      <RivePetPlayer
+        mood={mood}
+        level={level}
+        food={food}
+        signal={signal}
+        onLoadError={() => setRiveAssetStatus('missing')}
+      />
+    );
+  }
+
+  return <MiniPetCanvas mood={mood} level={level} food={food} pulse={signal.nonce} />;
+}
+
 function buildMethodFitResults(
   plan: MethodTrial[],
   answers: Record<number, number>,
@@ -1440,7 +1571,7 @@ export default function App() {
   const [petFood, setPetFood] = useState(() => clampNumber(readNumber(STORAGE_KEYS.petFood, 2), 0, 99));
   const [petBond, setPetBond] = useState(() => clampNumber(readNumber(STORAGE_KEYS.petBond, 0), 0, 999));
   const [petMood, setPetMood] = useState(() => clampNumber(readNumber(STORAGE_KEYS.petMood, 62), 0, 100));
-  const [petPulse, setPetPulse] = useState(0);
+  const [petSignal, setPetSignal] = useState<PetActionSignal>({ type: 'tap', nonce: 0 });
   const [isAmoled, setIsAmoled] = useState(() => localStorage.getItem(STORAGE_KEYS.amoled) === 'true');
   const [isHapticEnabled, setIsHapticEnabled] = useState(() => localStorage.getItem(STORAGE_KEYS.haptic) !== 'false');
   const [incorrectNotes, setIncorrectNotes] = useState<IncorrectNote[]>(() => readJson(STORAGE_KEYS.incorrect, []));
@@ -1822,6 +1953,10 @@ export default function App() {
     setIsQuickTypeSettingsOpen(false);
   };
 
+  const emitPetAction = (type: PetActionType) => {
+    setPetSignal((prev) => ({ type, nonce: prev.nonce + 1 }));
+  };
+
   const rewardPetForQuestion = (isCorrect: boolean) => {
     setPetFood((prev) => clampNumber(prev + (isCorrect ? 2 : 1), 0, 99));
     setPetMood((prev) => clampNumber(prev + (isCorrect ? 2 : 1), 0, 100));
@@ -1834,16 +1969,18 @@ export default function App() {
       return;
     }
 
+    const nextBond = clampNumber(petBond + 4, 0, 999);
+    const nextLevel = Math.min(99, Math.floor(nextBond / 12) + 1);
     setPetFood((prev) => clampNumber(prev - 1, 0, 99));
-    setPetBond((prev) => clampNumber(prev + 4, 0, 999));
+    setPetBond(nextBond);
     setPetMood((prev) => clampNumber(prev + 14, 0, 100));
-    setPetPulse((prev) => prev + 1);
+    emitPetAction(nextLevel > petLevel ? 'levelUp' : 'feed');
   };
 
   const handlePetTap = () => {
     triggerHaptic();
     setPetMood((prev) => clampNumber(prev + 2, 0, 100));
-    setPetPulse((prev) => prev + 1);
+    emitPetAction(petMood < 34 ? 'sleepy' : 'tap');
   };
 
   const getPerTypeCount = (types: TrainingType[], difficulty: DifficultyLevel): number => {
@@ -1888,6 +2025,7 @@ export default function App() {
     setSecondsLeft(getTrainingSeconds(questions.length, difficulty));
     setQuestionStartedAt(Date.now());
     setIsExamActive(true);
+    emitPetAction('train');
     setIsCourseBuilderOpen(false);
     setIsDifficultySheetOpen(false);
     setPendingTrainingLaunch(null);
@@ -1935,6 +2073,7 @@ export default function App() {
     setSecondsLeft(seconds);
     setQuestionStartedAt(Date.now());
     setIsExamActive(true);
+    emitPetAction('train');
   };
 
   const startMistakeCourse = () => {
@@ -2212,7 +2351,7 @@ export default function App() {
     setLastExamResult(result);
     setPetFood((prev) => clampNumber(prev + 2, 0, 99));
     setPetMood((prev) => clampNumber(prev + 6, 0, 100));
-    setPetPulse((prev) => prev + 1);
+    emitPetAction(result.accuracy >= 70 ? 'checkIn' : 'tap');
     setIsExamActive(false);
     setShowResultsOverlay(true);
   }
@@ -2295,7 +2434,7 @@ export default function App() {
     setPetFood(2);
     setPetBond(0);
     setPetMood(62);
-    setPetPulse((prev) => prev + 1);
+    emitPetAction('tap');
   };
 
   const currentQuestion = activeExamQuestions[currentQIndex];
@@ -2380,7 +2519,7 @@ export default function App() {
                   </div>
 
                   <button className="pet-canvas-wrap" type="button" onClick={handlePetTap} aria-label="틈새냥 쓰다듬기">
-                    <MiniPetCanvas mood={petMood} level={petLevel} food={petFood} pulse={petPulse} />
+                    <PetRenderer mood={petMood} level={petLevel} food={petFood} signal={petSignal} />
                   </button>
                 </div>
 
