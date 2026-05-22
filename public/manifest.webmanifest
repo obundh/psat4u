@@ -1,0 +1,21 @@
+{
+  "name": "PSAT4U",
+  "short_name": "PSAT4U",
+  "description": "서버 없이 작동하는 모바일 PSAT 틈새 훈련 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070811",
+  "theme_color": "#070811",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
