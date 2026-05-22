@@ -2179,6 +2179,24 @@ export default function App() {
                     </div>
                   </div>
 
+                  <div className="premium-glass-card settings-section-card">
+                    <span className="settings-section-title">고지</span>
+                    <div className="settings-legal-stack">
+                      <div>
+                        <span className="settings-row-label">무료 오프라인 학습 앱</span>
+                        <p className="settings-legal-copy">PSAT4U는 서버 전송 없이 기기 안에서만 기록을 저장합니다. 모든 훈련 문제는 앱 내부 규칙으로 생성한 연습문제입니다.</p>
+                      </div>
+                      <div>
+                        <span className="settings-row-label">비공식 서비스</span>
+                        <p className="settings-legal-copy">공직적격성평가 대비용 비공식 학습 도구이며, 시험 주관기관이나 상표권자와 제휴하거나 보증받은 앱이 아닙니다.</p>
+                      </div>
+                      <div>
+                        <span className="settings-row-label">오픈소스 고지</span>
+                        <p className="settings-legal-copy">React, Capacitor, Lucide 등 MIT/ISC/0BSD 라이선스의 오픈소스 소프트웨어를 사용합니다.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="premium-glass-card settings-section-card" style={{ borderColor: 'rgba(239,68,68,0.2)' }}>
                     <span className="settings-section-title" style={{ color: 'var(--danger)' }}>초기화</span>
                     <div className="settings-row-item">

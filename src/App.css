@@ -3011,6 +3011,19 @@ body.amoled-mode {
   color: var(--text-muted);
 }
 
+.settings-legal-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-legal-copy {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
 /* Custom interactive toggles */
 .toggle-switch-input {
   display: none;
