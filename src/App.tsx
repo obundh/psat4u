@@ -2183,8 +2183,12 @@ export default function App() {
                     <span className="settings-section-title">고지</span>
                     <div className="settings-legal-stack">
                       <div>
+                        <span className="settings-row-label">개인정보 처리방침</span>
+                        <p className="settings-legal-copy">PSAT4U는 계정, 서버, 광고, 분석 SDK를 사용하지 않습니다. 오답, 통계, 설정은 기기 내부 저장소에만 저장되며 앱의 초기화 기능으로 삭제할 수 있습니다.</p>
+                      </div>
+                      <div>
                         <span className="settings-row-label">무료 오프라인 학습 앱</span>
-                        <p className="settings-legal-copy">PSAT4U는 서버 전송 없이 기기 안에서만 기록을 저장합니다. 모든 훈련 문제는 앱 내부 규칙으로 생성한 연습문제입니다.</p>
+                        <p className="settings-legal-copy">모든 훈련 문제는 앱 내부 규칙으로 생성한 연습문제이며, 공식 기출 원문이나 상업 교재 문항을 포함하지 않습니다.</p>
                       </div>
                       <div>
                         <span className="settings-row-label">비공식 서비스</span>
