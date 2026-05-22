@@ -1,0 +1,206 @@
+/* 
+  PSAT4U Premium Design Tokens & Global Styles
+  Theme: Cosmic Tech Scholar (Pure Mobile focus)
+*/
+
+:root {
+  /* Colors */
+  --bg-cosmic: #070811;
+  --bg-deep-card: rgba(18, 22, 45, 0.72);
+  --bg-deep-card-hover: rgba(26, 32, 64, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-active: rgba(99, 102, 241, 0.45);
+  
+  /* Accent Colors */
+  --accent-indigo: #6366f1;
+  --accent-violet: #a855f7;
+  --accent-pink: #ec4899;
+  --accent-cyan: #06b6d4;
+  --accent-blue: #3b82f6;
+  --primary: var(--accent-indigo);
+  --primary-light: #818cf8;
+  --secondary: var(--accent-violet);
+  --secondary-light: #c084fc;
+  
+  /* Status Colors */
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.3);
+  --warning: #f59e0b;
+  --warning-glow: rgba(245, 158, 11, 0.3);
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.3);
+
+  /* Text Colors */
+  --text-pure: #ffffff;
+  --text-main: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  /* Premium Gradients */
+  --grad-neon: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-violet) 50%, var(--accent-pink) 100%);
+  --grad-cyan-blue: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-cyan) 100%);
+  --grad-warm: linear-gradient(135deg, #f59e0b 0%, #ec4899 100%);
+  --grad-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%);
+
+  /* Fonts */
+  --font-display: 'Plus Jakarta Sans', 'Outfit', 'Noto Sans KR', sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif;
+
+  /* Card Shadows & Blur */
+  --glass-blur: blur(20px);
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  --shadow-glow-indigo: 0 0 25px 0 rgba(99, 102, 241, 0.3);
+  --shadow-glow-violet: 0 0 25px 0 rgba(168, 85, 247, 0.3);
+  
+  --radius-xs: 6px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+}
+
+/* Reset and Core Configuration */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-cosmic);
+  background-image: 
+    radial-gradient(at 10% 15%, rgba(99, 102, 241, 0.15) 0px, transparent 45%),
+    radial-gradient(at 90% 85%, rgba(236, 72, 153, 0.12) 0px, transparent 45%),
+    radial-gradient(at 50% 50%, rgba(6, 182, 212, 0.06) 0px, transparent 45%);
+  background-attachment: fixed;
+  color: var(--text-main);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow: hidden; /* Lock scroll globally for app-like shell */
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-pure);
+  letter-spacing: -0.025em;
+}
+
+/* Scrollbar behaviors for inner scroll */
+::-webkit-scrollbar {
+  display: none; /* Hide scrollbars everywhere for a clean mobile native app feel */
+}
+
+body.drag-scroll-lock,
+body.drag-scroll-lock * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.drag-scroll-active {
+  cursor: grabbing !important;
+  scroll-behavior: auto !important;
+}
+
+/* Glassmorphic Panel Core */
+.premium-glass-card {
+  background: var(--bg-deep-card);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-premium);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.premium-glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: var(--grad-glass);
+  mask: linear-gradient(#fff 0 0) exclude, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.premium-glass-card:hover {
+  background: var(--bg-deep-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.premium-glass-card:active {
+  transform: scale(0.98) translateY(0);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); filter: drop-shadow(0 0 5px rgba(99, 102, 241, 0.1)); }
+  50% { opacity: 0.9; transform: scale(1.03); filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.3)); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes flameExplosion {
+  0% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.15) rotate(-6deg); filter: drop-shadow(0 0 10px #f59e0b); }
+  50% { transform: scale(0.95) rotate(6deg); filter: drop-shadow(0 0 15px #ec4899); }
+  75% { transform: scale(1.05) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Animation utilities */
+.animate-fade {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-streak-fire {
+  animation: flameExplosion 1.8s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 6s ease infinite;
+}
+
+/* Center flexbox */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
