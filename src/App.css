@@ -6,6 +6,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: #04050a;
   background-image: 
     radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
@@ -2698,17 +2699,24 @@
 }
 
 /* 💻 RESPONSIVE MEDIA OVERRIDES (IMPORTANT: DISMANTLING PHONES FOR CAPACITOR/ANDROID) */
-@media (max-width: 480px) {
+@media (max-width: 480px), (hover: none) and (pointer: coarse) {
   .mobile-mockup-wrapper {
     background: var(--bg-cosmic);
     padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100vw;
+    min-height: 100dvh;
+    height: 100dvh;
   }
 
   .smartphone-bezel {
     border: none;
     border-radius: 0;
     width: 100vw;
-    height: 100vh;
+    max-width: none;
+    height: 100dvh;
+    min-height: 100dvh;
     box-shadow: none;
   }
 
@@ -2725,14 +2733,59 @@
   }
 
   .app-screen-container {
-    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .app-scrollable-body {
+    width: min(100%, 680px);
+    margin: 0 auto;
+    padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
   }
 
   .floating-bottom-nav {
-    /* Slightly pin to bottom boundary on real devices */
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    right: auto;
+    width: min(calc(100vw - 32px), 520px);
+    transform: translateX(-50%);
+  }
+
+  .bottom-sheet-overlay {
+    position: fixed;
+  }
+
+  .bottom-sheet-content {
+    width: min(100%, 680px);
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px));
+    margin: 0 auto;
+    padding-bottom: calc(2.25rem + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+  }
+
+  .course-builder-sheet,
+  .quick-type-settings-sheet {
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px));
+  }
+
+  .course-builder-sheet > .action-confirm-btn,
+  .quick-type-settings-sheet > .action-confirm-btn,
+  .difficulty-sheet > .action-confirm-btn {
+    position: sticky;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+  }
+
+  .method-finder-viewport,
+  .immersive-quiz-viewport {
+    position: fixed;
+    min-height: 100dvh;
+  }
+
+  .quiz-viewport-footer,
+  .method-footer {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    min-height: calc(60px + env(safe-area-inset-bottom, 0px));
   }
 }
 

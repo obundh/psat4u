@@ -52,10 +52,12 @@ https://github.com/obundh/psat4u/blob/main/docs/PRIVACY_POLICY.md
 
 ## Release Notes
 
-첫 Play Store 배포입니다. 오프라인 PSAT 유형별 훈련, 난이도 설정, 유형별 기록, 오답노트, 풀이법 찾기 기능을 제공합니다.
+태블릿 환경에서 화면이 스마트폰 목업에 갇히지 않도록 레이아웃을 개선했습니다. 오프라인 PSAT 유형별 훈련, 난이도 설정, 유형별 기록, 오답노트, 풀이법 찾기 기능을 제공합니다.
 
 ## Graphic Assets
 
 - App icon: `docs/brand/app-icon.png`
 - Feature graphic: `docs/play-store/feature-graphic.png`
 - Phone screenshots: `docs/play-store/phone-screenshots/01-home-routine.png` through `docs/play-store/phone-screenshots/06-settings-notices.png`
+- 7-inch tablet screenshots: `docs/play-store/tablet-7-inch/01-tablet-home.png` through `docs/play-store/tablet-7-inch/04-tablet-method-finder.png`
+- 10-inch tablet screenshots: `docs/play-store/tablet-10-inch/01-tablet-home.png` through `docs/play-store/tablet-10-inch/04-tablet-method-finder.png`
