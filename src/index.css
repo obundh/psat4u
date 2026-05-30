@@ -66,6 +66,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 body {
   background-color: var(--bg-cosmic);
   background-image: 
@@ -78,7 +86,16 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden; /* Lock scroll globally for app-like shell */
+}
+
+@supports (-webkit-touch-callout: none) {
+  html,
+  body,
+  #root {
+    min-height: -webkit-fill-available;
+  }
 }
 
 /* Typography */

@@ -2737,6 +2737,11 @@
     min-height: 0;
   }
 
+  .app-header {
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .app-scrollable-body {
     width: min(100%, 680px);
     margin: 0 auto;
@@ -2782,10 +2787,187 @@
     min-height: 100dvh;
   }
 
+  .quiz-viewport-header,
+  .method-finder-header {
+    min-height: calc(52px + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .quiz-viewport-footer,
   .method-footer {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     min-height: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 380px) and (hover: none) and (pointer: coarse), (max-width: 380px) {
+  .app-header {
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+  }
+
+  .logo-main-text {
+    font-size: 1.08rem;
+  }
+
+  .logo-badge {
+    font-size: 0.5rem;
+    padding: 1px 4px;
+  }
+
+  .streak-flame-chip {
+    padding: 5px 9px;
+    font-size: 0.68rem;
+  }
+
+  .app-scrollable-body {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+    gap: 1.1rem;
+  }
+
+  .dashboard-overview-card {
+    padding: 1rem;
+  }
+
+  .routine-dashboard-card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .routine-info-panel h4 {
+    font-size: 1rem;
+  }
+
+  .routine-stats-strip {
+    gap: 5px;
+  }
+
+  .routine-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .routine-secondary-btn {
+    min-height: 32px;
+  }
+
+  .routine-orbit-panel {
+    min-height: 86px;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+
+  .routine-orbit-ring {
+    width: 64px;
+    height: 64px;
+  }
+
+  .routine-orbit-ring::after {
+    inset: 7px;
+  }
+
+  .routine-orbit-core {
+    font-size: 0.88rem;
+  }
+
+  .horizontal-carousel {
+    gap: 9px;
+  }
+
+  .carousel-card {
+    flex-basis: 150px;
+    height: 126px;
+  }
+
+  .subject-grid-selector {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .course-type-grid,
+  .method-type-grid,
+  .subtopics-grid,
+  .training-library-grid,
+  .method-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-type-check,
+  .method-type-card {
+    min-height: 44px;
+  }
+
+  .notes-actions-row {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .notes-clear-btn {
+    width: 44px;
+  }
+
+  .quiz-viewport-header,
+  .method-finder-header {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .quiz-scope-badge h6 {
+    max-width: 112px;
+  }
+
+  .quiz-viewport-footer {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .quiz-nav-btn,
+  .quiz-submit-btn {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (max-height: 700px) and (hover: none) and (pointer: coarse) {
+  .app-scrollable-body {
+    padding-top: 0.85rem;
+    gap: 0.95rem;
+  }
+
+  .dashboard-overview-card {
+    padding: 0.95rem;
+  }
+
+  .routine-dashboard-card {
+    min-height: 150px;
+  }
+
+  .bottom-sheet-content {
+    max-height: calc(100dvh - 12px - env(safe-area-inset-top, 0px));
+    padding-top: 1.1rem;
+  }
+
+  .method-type-grid {
+    max-height: clamp(170px, 28vh, 230px);
+  }
+}
+
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) and (max-height: 520px) {
+  .app-scrollable-body {
+    max-width: 760px;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bottom-sheet-content {
+    width: min(100%, 760px);
+    max-height: calc(100dvh - 12px);
+  }
+
+  .routine-dashboard-card {
+    grid-template-columns: minmax(0, 1fr) 104px;
+  }
+
+  .routine-orbit-panel {
+    min-height: 110px;
   }
 }
 
